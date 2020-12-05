@@ -2,9 +2,7 @@
   (:require [clojure.string :as string]
             [clojure.java.io :as io]))
 
-(defn read-input [filename] (map read-string (string/split-lines (slurp (io/resource filename)))))
-
-(def input (read-input "day-01.txt"))
+(def input (map read-string (string/split-lines (slurp (io/resource "day-01.txt")))))
 
 ;; part 1
 (first
