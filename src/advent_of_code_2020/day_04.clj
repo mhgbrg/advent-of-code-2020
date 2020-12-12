@@ -8,7 +8,7 @@
     {}
     (map
       (fn [[_ key val]] [(keyword key) val])
-      (re-seq #"([a-z]{3}):(.*?)(\s|$)" passport)
+      (re-seq #"([a-z]{3}):(\S+)" passport)
       )
     )
   )
@@ -16,10 +16,7 @@
 (def input
   (map
     parse-passport
-    (map
-      (fn [entry] (string/replace entry "\n" " "))
-      (string/split (slurp (io/resource "day-04.txt")) #"\n\n")
-      )
+    (string/split (slurp (io/resource "day-04.txt")) #"\n\n")
     )
   )
 
@@ -37,7 +34,10 @@
     )
   )
 
-(count (filter true? (map valid-1? input)))
+(->> input
+     (map valid-1?)
+     (filter true?)
+     (count))
 
 ; part 2
 (defn integer-between?
@@ -50,47 +50,47 @@
     )
   )
 
-(defn validate-byr [val] (integer-between? val 1920 2002))
+(defn valid-byr? [val] (integer-between? val 1920 2002))
 
-(defn validate-iyr [val] (integer-between? val 2010 2020))
+(defn valid-iyr? [val] (integer-between? val 2010 2020))
 
-(defn validate-eyr [val] (integer-between? val 2020 2030))
+(defn valid-eyr? [val] (integer-between? val 2020 2030))
 
-(defn validate-hgt
+(defn valid-hgt?
   [val]
-  (let [match (re-find #"^(\d+)(cm|in)$" val)]
+  (let [[match nbr unit] (re-find #"^(\d+)(cm|in)$" val)]
     (and
       (not (nil? match))
-      (let [[_ nbr unit] match
-            parsed (read-string nbr)]
-        (cond
-          (= unit "cm") (<= 150 parsed 193)
-          (= unit "in") (<= 59 parsed 76)
+      (let [parsed (read-string nbr)]
+        (case unit
+          "cm" (<= 150 parsed 193)
+          "in" (<= 59 parsed 76)
+          false
           )
         )
       )
     )
   )
 
-(defn validate-hcl [val] (not (nil? (re-find #"^#[a-f0-9]{6}$" val))))
+(defn valid-hcl? [val] (not (nil? (re-find #"^#[a-f0-9]{6}$" val))))
 
-(defn validate-ecl
+(defn valid-ecl?
   [val]
   (contains? #{"amb" "blu" "brn" "gry" "grn" "hzl" "oth"} val)
   )
 
-(defn validate-pid [val] (not (nil? (re-find #"^[0-9]{9}$" val))))
+(defn valid-pid? [val] (not (nil? (re-find #"^[0-9]{9}$" val))))
 
-(defn validate-field
+(defn valid-field?
   [[key val]]
   (cond
-    (= key :byr) (validate-byr val)
-    (= key :iyr) (validate-iyr val)
-    (= key :eyr) (validate-eyr val)
-    (= key :hgt) (validate-hgt val)
-    (= key :hcl) (validate-hcl val)
-    (= key :ecl) (validate-ecl val)
-    (= key :pid) (validate-pid val)
+    (= key :byr) (valid-byr? val)
+    (= key :iyr) (valid-iyr? val)
+    (= key :eyr) (valid-eyr? val)
+    (= key :hgt) (valid-hgt? val)
+    (= key :hcl) (valid-hcl? val)
+    (= key :ecl) (valid-ecl? val)
+    (= key :pid) (valid-pid? val)
     (= key :cid) true
     )
   )
@@ -99,8 +99,12 @@
   [passport]
   (and
     (valid-1? passport)
-    (every? true? (map validate-field passport))
+    (every? true? (map valid-field? passport))
     )
   )
 
-(count (filter true? (map valid-2? input)))
+(->> input
+     (map valid-2?)
+     (filter true?)
+     (count)
+     )
