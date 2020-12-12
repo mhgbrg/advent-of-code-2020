@@ -12,21 +12,18 @@
       )
   )
 
-(defn parse-binary-str [val binary-mapping]
-  (let [binary-str (apply str (replace binary-mapping val))]
-    (Integer/parseInt binary-str 2)
+(def binary-mapping {\F \0 \B \1 \L \0 \R \1})
+
+(defn parse-as-binary [val]
+  (let [binary (map binary-mapping val)]
+    (Integer/parseInt (apply str binary) 2)
     )
   )
 
-(defn parse-row [row] (parse-binary-str row {\F \0 \B \1}))
-
-(defn parse-col [col] (parse-binary-str col {\L \0 \R \1}))
-
 (defn parse-seat [seat]
-  (let [row (subs seat 0 7)
-        col (subs seat 7)]
-    {:row (parse-row row)
-     :col (parse-col col)
+  (let [[row col] (partition-all 7 seat)]
+    {:row (parse-as-binary row)
+     :col (parse-as-binary col)
      }
     )
   )
@@ -36,12 +33,15 @@
   )
 
 ; part 1
-(reduce max (map (comp seat-id parse-seat) input))
+(apply max (map (comp seat-id parse-seat) input))
 
 ; part 2
 (let [ids (map (comp seat-id parse-seat) input)
-      min (reduce min ids)
-      max (reduce max ids)
+      min (apply min ids)
+      max (apply max ids)
       lookup (set ids)]
-  (first (filter (partial (complement contains?) lookup) (range min max)))
+  (some
+    (fn [i] (when (not (contains? lookup i)) i))
+    (range min max)
+    )
   )
