@@ -15,14 +15,14 @@
 
 ; part 1
 (defn answered-questions-1 [answers]
-  (reduce set/union (map set answers))
+  (apply set/union (map set answers))
   )
 
-(reduce + (map (comp count answered-questions-1) input))
+(apply + (map (comp count answered-questions-1) input))
 
 ; part 2
 (defn answered-questions-2 [answers]
-  (reduce set/intersection (map set answers))
+  (apply set/intersection (map set answers))
   )
 
-(reduce + (map (comp count answered-questions-2) input))
+(apply + (map (comp count answered-questions-2) input))
