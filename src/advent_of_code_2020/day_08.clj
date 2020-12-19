@@ -18,19 +18,16 @@
        )
   )
 
-(defn execute [get-op]
-  (loop [i 0
-         acc 0
-         executed-ops #{}]
-    ;(prn i acc executed-ops)
-    (if (contains? executed-ops i)
+(defn execute [ops]
+  (loop [{:keys [pc acc seen-pcs] :as ctx} {:pc 0 :acc 0 :seen-pcs #{}}]
+    (if (contains? seen-pcs pc)
       [:loop acc]
-      (let [[op arg] (get-op i)
-            executed-ops' (conj executed-ops i)]
+      (let [[op arg] (get ops pc)
+            ctx' (update ctx :seen-pcs conj pc)]
         (case op
-          :acc (recur (inc i) (+ acc arg) executed-ops')
-          :jmp (recur (+ i arg) acc executed-ops')
-          :nop (recur (inc i) acc executed-ops')
+          :acc (recur (-> ctx' (update :pc inc) (update :acc + arg)))
+          :jmp (recur (-> ctx' (update :pc + arg)))
+          :nop (recur (-> ctx' (update :pc inc)))
           [:term acc]
           )
         )
@@ -39,29 +36,19 @@
   )
 
 ;part 1
-(execute (fn [i] (get input i)))
+(execute input)
 
 ;part 2
-(defn jmp-nop-indices [ops]
-  (keep-indexed
-    (fn [i [op _]] (when (contains? #{:jmp :nop} op) i))
-    ops
+(defn generate-programs [program]
+  (for [i (range 0 (count program))
+        :when (contains? #{:jmp :nop} (get-in program [i 0]))]
+    (update-in program [i 0] {:jmp :nop, :nop :jmp})
     )
   )
 
-(defn get-op [ops swap-i i]
-  (let [[op arg] (get ops i)]
-    (if (= i swap-i)
-      (case op
-        :jmp [:nop arg]
-        :nop [:jmp arg]
-        )
-      [op arg]
-      )
-    )
-  )
-
-(->> (for [swap-i (jmp-nop-indices input)] (execute (fn [i] (get-op input swap-i i))))
+(->> input
+     (generate-programs)
+     (map execute)
      (filter #(= (first %) :term))
      (first)
      )

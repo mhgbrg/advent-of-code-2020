@@ -16,34 +16,28 @@
 ;part 1
 (defn valid? [preamble n]
   (some
-    true?
-    (for [n1 preamble
-          n2 preamble]
-      (and
-        (not= n1 n2)
-        (= (+ n1 n2) n)
-        )
+    #{n}
+    (for [x preamble
+          y preamble
+          :when (< x y)]
+        (+ x y)
       )
     )
   )
 
-(loop [preamble (take preamble-size input)
-       rest (drop preamble-size input)]
-  (let [n (first rest)]
-    (if (valid? preamble n)
-      (recur
-        (next (concat preamble [n]))
-        (next rest)
-        )
-      n
-      )
-    )
-  )
+(->> (for [part (partition (inc preamble-size) 1 input)
+           :let [preamble (butlast part)
+                 n (last part)]]
+       (when-not (valid? preamble n) n)
+       )
+     (filter (comp not nil?))
+     (first)
+     )
 
 ;part 2
-(defn find-terms [list target]
+(defn find-terms [nums target]
   (loop [terms ()
-         remaining list]
+         remaining nums]
     (let [sum (apply + terms)]
       (cond
         ; target found, return terms
