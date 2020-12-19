@@ -18,10 +18,6 @@
        )
   )
 
-(defn get-op-1 [ops i] (get ops i))
-
-
-
 (defn execute [get-op]
   (loop [i 0
          acc 0
