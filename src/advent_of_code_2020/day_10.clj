@@ -1,7 +1,6 @@
 (ns advent-of-code-2020.day-10
   (:require [clojure.java.io :as io]
-            [clojure.string :as string]
-            [clojure.walk :as walk]))
+            [clojure.string :as string]))
 
 (def adapters
   (let [input (->> "day-10.txt"
