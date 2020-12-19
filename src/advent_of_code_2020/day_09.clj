@@ -1,7 +1,6 @@
 (ns advent-of-code-2020.day-09
   (:require [clojure.java.io :as io]
-            [clojure.string :as string])
-  (:import (clojure.lang PersistentQueue)))
+            [clojure.string :as string]))
 
 (def input
   (->> "day-09.txt"
@@ -12,6 +11,9 @@
        )
   )
 
+(def preamble-size 25)
+
+;part 1
 (defn valid? [preamble n]
   (some
     true?
@@ -25,19 +27,15 @@
     )
   )
 
-;part 1
-(let [init-preamble (take 25 input)
-      init-rest (drop 25 input)]
-  (loop [preamble init-preamble
-         rest init-rest]
-    (let [n (first rest)]
-      (if (valid? preamble n)
-        (recur
-          (drop 1 (concat preamble [n]))
-          (drop 1 rest)
-          )
-        n
+(loop [preamble (take preamble-size input)
+       rest (drop preamble-size input)]
+  (let [n (first rest)]
+    (if (valid? preamble n)
+      (recur
+        (next (concat preamble [n]))
+        (next rest)
         )
+      n
       )
     )
   )
@@ -51,9 +49,9 @@
         ; target found, return terms
         (= sum target) terms
         ; target too low, add a new element to terms from remaining
-        (< sum target) (recur (concat terms [(first remaining)]) (drop 1 remaining))
+        (< sum target) (recur (concat terms [(first remaining)]) (next remaining))
         ; target too low, remove an old element from terms without advancing remaining
-        (> sum target) (recur (drop 1 terms) remaining)
+        (> sum target) (recur (next terms) remaining)
         )
       )
     )
