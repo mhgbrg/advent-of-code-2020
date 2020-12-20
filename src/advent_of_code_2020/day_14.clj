@@ -3,10 +3,16 @@
             [clojure.string :as string]
             [clojure.core.match :refer [match]]))
 
+(defn parse-mask [mask]
+  (->> (reverse mask)
+       (map-indexed vector)
+       )
+  )
+
 (defn parse-instruction [instr]
   (let [[_ op _ i arg] (re-matches #"(mask|mem)(\[(\d+)\])? = (.*)" instr)]
     (case op
-      "mask" [:mask nil arg]
+      "mask" [:mask nil (parse-mask arg)]
       "mem" [:mem (read-string i) (read-string arg)]
       )
     )
@@ -22,13 +28,6 @@
   )
 
 ;part 1
-(defn parse-mask [mask]
-  (->> (reverse mask)
-       (map-indexed (fn [i m] [i m]))
-       (filter #(not (nil? (second %))))
-       )
-  )
-
 (defn apply-mask [mask x]
   (reduce
     (fn [x' [i m]]
@@ -43,53 +42,47 @@
     )
   )
 
-(defn apply-instr [{:keys [mask mem] :as ctx} [op i arg]]
+(defn apply-instr [{:keys [mask] :as ctx} [op i arg]]
   (case op
-    :mask (assoc ctx :mask (parse-mask arg))
-    :mem  (assoc ctx :mem (assoc mem i (apply-mask mask arg)))
+    :mask (assoc ctx :mask arg)
+    :mem (assoc ctx i (apply-mask mask arg))
     )
   )
 
-(let [{:keys [mem]} (reduce apply-instr {:mask '() :mem {}} input)]
-  (apply + (vals mem))
+(let [ctx (reduce apply-instr {:mask '()} input)]
+  (apply + (vals (dissoc ctx :mask)))
   )
 
 ;part 2
 (defn apply-mask-2 [mask x]
-  (loop [mask' mask
-         xs (list x)]
-    (let [[[i m] & rest] mask']
+  (reduce
+    (fn [xs [i m]]
       (case m
         nil xs
-        \0 (recur rest xs)
-        \1 (recur rest (map #(bit-set % i) xs))
-        \X (recur
-             rest
-             (concat
-               (map #(bit-clear % i) xs)
-               (map #(bit-set % i) xs)
-               )
+        \0 xs
+        \1 (map #(bit-set % i) xs)
+        \X (concat
+             (map #(bit-clear % i) xs)
+             (map #(bit-set % i) xs)
              )
         )
       )
+    (list x)
+    mask
     )
   )
 
-(defn apply-instr-2 [{:keys [mask mem] :as ctx} [op i arg]]
+(defn apply-instr-2 [{:keys [mask] :as ctx} [op i arg]]
   (case op
-    :mask (assoc ctx :mask (parse-mask arg))
-    :mem (assoc
+    :mask (assoc ctx :mask arg)
+    :mem (reduce
+           (fn [ctx' i'] (assoc ctx' i' arg))
            ctx
-           :mem
-           (reduce
-             (fn [mem' i'] (assoc mem' i' arg))
-             mem
-             (apply-mask-2 mask i)
-             )
+           (apply-mask-2 mask i)
            )
     )
   )
 
-(let [{:keys [mem]} (reduce apply-instr-2 {:mask '() :mem {}} input)]
-  (apply + (vals mem))
+(let [ctx (reduce apply-instr-2 {:mask '()} input)]
+  (apply + (vals (dissoc ctx :mask)))
   )
