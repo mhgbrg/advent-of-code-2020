@@ -1,7 +1,6 @@
 (ns advent-of-code-2020.day-14
   (:require [clojure.java.io :as io]
-            [clojure.string :as string]
-            [clojure.core.match :refer [match]]))
+            [clojure.string :as string]))
 
 (defn parse-mask [mask]
   (->> (reverse mask)
