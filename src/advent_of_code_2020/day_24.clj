@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.algo.generic.functor :as functor]
-            [clojure.math.combinatorics :as combo]))
+            [clojure.set :as set]))
 
 (defn parse-instruction [instr]
   (map keyword (re-seq #"e|se|sw|w|nw|ne" instr))
@@ -17,7 +17,7 @@
        )
   )
 
-(defn coords [instr]
+(defn instruction-to-coord [instr]
   (reduce
     (fn [[x y] c]
       (case c
@@ -34,18 +34,33 @@
     )
   )
 
+(def initial-state
+  (->> input
+       (map instruction-to-coord)
+       (frequencies)
+       (functor/fmap #(case (mod % 2) 0 :white 1 :black))
+       (filter (fn [[_ color]] (= color :black)))
+       (map first)
+       (into #{})
+       )
+  )
+
 ;part 1
-(->> input
-     (map coords)
-     (frequencies)
-     (vals)
-     (filter #(= 1 (mod % 2)))
-     (count)
-     )
+(count initial-state)
 
 ;part 2
-(defn get-tile [state [x y]]
-  (or (get state [x y]) :white)
+(defn get-tile [state coord]
+  (if (contains? state coord)
+    :black
+    :white
+    )
+  )
+
+(defn set-tile [state coord color]
+  (if (= color :black)
+    (conj state coord)
+    (disj state coord)
+    )
   )
 
 (defn adjacent-coords [[x y]]
@@ -76,38 +91,20 @@
   )
 
 (defn next-state [state]
-  (let [[xs ys] (apply map list (keys state))
-        x-min (apply min xs)
-        x-max (apply max xs)
-        y-min (apply min ys)
-        y-max (apply max ys)]
-    (reduce
-      (fn [state' coord]
-        (assoc
-          state'
-          coord
-          (next-tile state coord)
-          )
+  (reduce
+    (fn [state' coord]
+      (let [tile (next-tile state coord)]
+        (set-tile state' coord tile)
         )
-      state
-      (combo/cartesian-product (range (- x-min 2) (+ x-max 3)) (range (- y-min 1) (+ y-max 2)))
       )
+    state
+    (set/union state (set (mapcat adjacent-coords state)))
     )
   )
 
-(let [initial-state (->> input
-                         (map coords)
-                         (frequencies)
-                         (functor/fmap #(case (mod % 2) 0 :white 1 :black)))
-      final-state (reduce
-                    (fn [state day]
-                      (println "day" (inc day))
-                      (next-state state))
-                    initial-state
-                    (range 100))]
-  (->> final-state
-       (vals)
-       (filter #{:black})
-       (count)
-       )
+(count
+  (reduce
+    (fn [state _day] (next-state state))
+    initial-state
+    (range 100))
   )
